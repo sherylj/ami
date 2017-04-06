@@ -159,7 +159,7 @@ export default class WidgetsRuler extends WidgetsBase {
     this._line.style.transformOrigin = '0 100%';
     this._line.style.marginTop = '-1px';
     this._line.style.height = '2px';
-    this._line.style.width = '3px';
+    this._line.style.width = '50px';
     this._container.appendChild(this._line);
 
     // add distance!
@@ -198,17 +198,23 @@ export default class WidgetsRuler extends WidgetsBase {
     transform += ` rotate(${angle}deg)`;
 
     this._line.style.transform = transform;
-    this._line.style.width = length;
+    // this._line.style.width = length;
 
     // update distance
     let w0 = this._handles[0].worldPosition;
     let w1 = this._handles[1].worldPosition;
 
-    this._distance.innerHTML = `${Math.sqrt((w0.x-w1.x)*(w0.x-w1.x) + (w0.y-w1.y)*(w0.y-w1.y) + (w0.z-w1.z)*(w0.z-w1.z)).toFixed(2)} mm`;
+    this._distance.innerHTML = `Line Length: ${Math.sqrt((w0.x-w1.x)*(w0.x-w1.x) + (w0.y-w1.y)*(w0.y-w1.y) + (w0.z-w1.z)*(w0.z-w1.z)).toFixed(2)} mm`;
     let posY0 = y0 - this._container.offsetHeight - this._distance.offsetHeight/2;
     x0 -= this._distance.offsetWidth/2;
 
-    let transform2 = `translate3D(${Math.round(x0)}px,${Math.round(posY0)}px, 0)`;
+    // put the label on the top side of the line
+    const labelx = this._handles[1].screenPosition.x;
+    let labely = this._handles[1].screenPosition.y;
+
+    let labelPosy = (labely - this._container.offsetHeight) + 10;
+
+    let transform2 = `translate3D(${Math.round(labelx)}px,${Math.round(labelPosy)}px, 0)`;
     this._distance.style.transform = transform2;
   }
 

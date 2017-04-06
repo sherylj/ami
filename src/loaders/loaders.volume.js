@@ -73,10 +73,15 @@ export default class LoadersVolumes extends LoadersBase {
                     let decompressedData = pako.inflate(data.buffer);
                     data.buffer = decompressedData.buffer;
                   }
-
-                  let parser = this._parser(data.extension);
-                  if (!parser) {
-                    reject(data.filename + ' can not be parsed.');
+                  let parser;
+                  // tp avoid assuming all extensions are file format : ePAD case
+                  if (data.extension.length <= 10) {
+                    parser = this._parser(data.extension);
+                    if (!parser) {
+                      reject(data.filename + ' can not be parsed.');
+                    }
+                  } else {
+                    parser = ParsersDicom;
                   }
 
                   // check extension

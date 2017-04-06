@@ -7,7 +7,7 @@ import Ruler from './widgets.ruler';
  */
 
 export default {
-	Handle,
+  Handle,
   VoxelProbe,
   Ruler,
 };
