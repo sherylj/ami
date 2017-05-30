@@ -281,8 +281,8 @@ export default class WidgetsHandle extends WidgetsBase {
     this._dom.style.backgroundColor = '#F9F9F9';
     this._dom.style.color = '#F9F9F9';
     this._dom.style.position = 'absolute';
-    this._dom.style.width = '12px';
-    this._dom.style.height = '12px';
+    this._dom.style.width = '8px';
+    this._dom.style.height = '8px';
     this._dom.style.margin = '-6px';
     this._dom.style.borderRadius = '50%';
     this._dom.style.transformOrigin = '0 100%';
