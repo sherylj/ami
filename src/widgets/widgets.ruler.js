@@ -159,7 +159,7 @@ export default class WidgetsRuler extends WidgetsBase {
     this._line.style.transformOrigin = '0 100%';
     this._line.style.marginTop = '-1px';
     this._line.style.height = '2px';
-    this._line.style.width = '50px';
+    this._line.style.width = '3px';
     this._container.appendChild(this._line);
 
     // add distance!
@@ -198,7 +198,7 @@ export default class WidgetsRuler extends WidgetsBase {
     transform += ` rotate(${angle}deg)`;
 
     this._line.style.transform = transform;
-    // this._line.style.width = length;
+    this._line.style.width = `${length}px`;
 
     // update distance
     let w0 = this._handles[0].worldPosition;
