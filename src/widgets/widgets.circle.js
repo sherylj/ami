@@ -30,12 +30,12 @@ export default class WidgetCircle extends WidgetsBase {
     this._mesh = null;
 
     // dom stuff
-    this._line = null;
+    this._circle = null;
     this._distance = null;
 
     // dom stuff
     // this._circle = null;
-    this._radius = 5;
+    this._radius = 3;
     this._segmentCount = 32;
 
     // canvas
@@ -119,7 +119,7 @@ export default class WidgetCircle extends WidgetsBase {
       this._handles[1].tracking = false;
     }
 
-    // State of ruler widget
+    // State of circle widget
     this._active = this._handles[0].active || this._handles[1].active;
     this.update();
   }
@@ -133,6 +133,7 @@ export default class WidgetCircle extends WidgetsBase {
     // let dist = this.distanceBetween(this._handles[0].screenPosition, this._handles[1].screenPosition);
     // let angle = this.angleBetween(this._handles[0].screenPosition, this._handles[1].screenPosition);
     this._hovered = this._handles[0].hovered || this._handles[1].hovered;
+    this._centerhover = this._handles[0].hovered;
     this.update();
   }
 
@@ -149,9 +150,6 @@ export default class WidgetCircle extends WidgetsBase {
     console.log('top left: ' + (x - radius));
     console.log('top right: ' + (y + radius));
     this._context.clearRect(x - radius, y - radius, radius * 2, radius * 2);
-  }
-
-  update() {
   }
 
   update() {
@@ -179,9 +177,9 @@ export default class WidgetCircle extends WidgetsBase {
       let w0 = this._handles[0].worldPosition;
       let w1 = this._handles[1].worldPosition;
 
-      let length = Math.sqrt((w0.x-w1.x)*(w0.x-w1.x) + (w0.y-w1.y)*(w0.y-w1.y) + (w0.z-w1.z)*(w0.z-w1.z)).toFixed(2);
+      // let length = Math.sqrt((w0.x-w1.x)*(w0.x-w1.x) + (w0.y-w1.y)*(w0.y-w1.y) + (w0.z-w1.z)*(w0.z-w1.z)).toFixed(2);
 
-      this._radius = length;
+      // this._radius = length;
       this.remove(this._mesh);
       this.createMesh(); // create mesh with new radius
     }
@@ -248,7 +246,7 @@ export default class WidgetCircle extends WidgetsBase {
     this._circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
     this._circle.setAttribute('cx', this._handles[0].screenPosition.x);
     this._circle.setAttribute('cy', this._handles[0].screenPosition.y);
-    this._circle.setAttribute('r', 3);
+    this._circle.setAttribute('r', this._radius);
     this._circle.setAttribute('stroke', 'blue');
     this._circle.setAttribute('stroke-width', 3);
     this._circle.setAttribute('fill', '#044B94');
@@ -262,7 +260,7 @@ export default class WidgetCircle extends WidgetsBase {
 
     // add distance!
     this._distance = document.createElement('div');
-    this._distance.setAttribute('class', 'widgets handle distance');
+    this._distance.setAttribute('class', 'widgets circle radius');
     this._distance.style.border = '2px solid';
     this._distance.style.backgroundColor = '#F9F9F9';
 
@@ -271,7 +269,7 @@ export default class WidgetCircle extends WidgetsBase {
     this._distance.style.position = 'absolute';
     this._distance.style.transformOrigin = '0 100%';
     this._distance.innerHTML = 'Hello, world!';
-    // this._container.appendChild(this._distance);
+    this._container.appendChild(this._distance);
 
     this.updateDOMColor();
     // this._domStyles.circle();
@@ -306,13 +304,27 @@ export default class WidgetCircle extends WidgetsBase {
     let transform = `translate3D(${x1}px,${posY}px, 0)`;
     transform += ` rotate(${angle}deg)`;
 
-    this._circle.setAttribute('cx', this._handles[0].screenPosition.x);
-    this._circle.setAttribute('cy', this._handles[0].screenPosition.y);
-    this._circle.setAttribute('r', length);
-    this._circle.setAttribute('stroke', 'blue');
-    this._circle.setAttribute('stroke-width', 3);
-    this._circle.setAttribute('fill', '#044B94');
-    this._circle.setAttribute('fill-opacity', '0.0');
+    if (this._handles[0]._active) {
+      console.log('center is hovered');
+      this._circle.setAttribute('cx', this._handles[0].screenPosition.x);
+      this._circle.setAttribute('cy', this._handles[0].screenPosition.y);
+      this._circle.setAttribute('r', this._radius);
+      this._circle.setAttribute('stroke', 'blue');
+      this._circle.setAttribute('stroke-width', 3);
+      this._circle.setAttribute('fill', '#044B94');
+      this._circle.setAttribute('fill-opacity', '0.0');
+    } else if (this._handles[1]._active) {
+      this._circle.setAttribute('cx', this._handles[0].screenPosition.x);
+      this._circle.setAttribute('cy', this._handles[0].screenPosition.y);
+      this._circle.setAttribute('r', length);
+      this._circle.setAttribute('stroke', 'blue');
+      this._circle.setAttribute('stroke-width', 3);
+      this._circle.setAttribute('fill', '#044B94');
+      this._circle.setAttribute('fill-opacity', '0.0');
+      this._radius = length;
+    }
+
+    // this._radius = length;
     // this._line.style.transform = transform;
     // this._line.style.width = length;
     // this.clearCanvas(this._handles[0].screenPosition.x, this._handles[0].screenPosition.y, length);
@@ -329,11 +341,17 @@ export default class WidgetCircle extends WidgetsBase {
     let w0 = this._handles[0].worldPosition;
     let w1 = this._handles[1].worldPosition;
 
-    this._distance.innerHTML = `${Math.sqrt((w0.x-w1.x)*(w0.x-w1.x) + (w0.y-w1.y)*(w0.y-w1.y) + (w0.z-w1.z)*(w0.z-w1.z)).toFixed(2)} mm`;
+    this._distance.innerHTML = `Radius : ${Math.sqrt((w0.x-w1.x)*(w0.x-w1.x) + (w0.y-w1.y)*(w0.y-w1.y) + (w0.z-w1.z)*(w0.z-w1.z)).toFixed(2)} mm`;
     let posY0 = y0 - this._container.offsetHeight - this._distance.offsetHeight/2;
     x0 -= this._distance.offsetWidth/2;
 
-    let transform2 = `translate3D(${Math.round(x0)}px,${Math.round(posY0)}px, 0)`;
+    // put the label on the top side of the line
+    const labelx = this._handles[1].screenPosition.x;
+    let labely = this._handles[1].screenPosition.y;
+
+    let labelPosy = (labely - this._container.offsetHeight) + 10;
+
+    let transform2 = `translate3D(${Math.round(labelx)}px,${Math.round(labelPosy)}px, 0)`;
     this._distance.style.transform = transform2;
   }
 
