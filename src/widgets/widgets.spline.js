@@ -63,12 +63,31 @@ export default class WidgetSpline extends WidgetsBase {
 
     // event listeners
     this.onMove = this.onMove.bind(this);
+    this.dragMouseUp = this.dragMouseUp.bind(this);
+    this.dragMouseDown = this.dragMouseDown.bind(this);
+    this.divMove = this.divMove.bind(this);
     this.addEventListeners();
   }
 
   addEventListeners() {
     this._container.addEventListener('mousewheel', this.onMove);
     this._container.addEventListener('DOMMouseScroll', this.onMove);
+    this._label.addEventListener('mousedown', this.dragMouseDown, false);
+    this._label.addEventListener('mouseup', this.dragMouseUp, false);
+  }
+
+  dragMouseUp() {
+    this._label.removeEventListener('mousemove', this.divMove, true);
+  }
+
+  dragMouseDown(evt) {
+    this._label.addEventListener('mousemove', this.divMove, true);
+  }
+
+  divMove(evt) {
+    this._label.style.position = 'absolute';
+    this._label.style.top = e.clientY + 'px';
+    this._label.style.left = e.clientX + 'px';
   }
 
   distanceBetweenFirstPoint(firstPosition, newPosition) {
@@ -190,16 +209,31 @@ export default class WidgetSpline extends WidgetsBase {
 
   createDOM() {
     // build path
-        let path = 'M' + this._handles[0].screenPosition.x + ',' + this._handles[0].screenPosition.y;
-        const line = this.splineInterpolation(this._handles);
-        path = path + ' L' + line + 'Z';
-        this._spline = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-        this._spline.setAttribute('class', 'widgets spline');
-        this._spline.setAttribute('fill', 'none');
-        this._spline.setAttribute('stroke', '#40ffdf');
-        this._spline.setAttribute('stroke-width', '1.85');
-        this._spline.setAttribute('d', path);
-        this._svgDiv.appendChild(this._spline);
+    let path = 'M' + this._handles[0].screenPosition.x + ',' + this._handles[0].screenPosition.y;
+    const line = this.splineInterpolation(this._handles);
+    path = path + ' L' + line + 'Z';
+    this._spline = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    this._spline.setAttribute('class', 'widgets spline');
+    this._spline.setAttribute('fill', 'none');
+    this._spline.setAttribute('stroke', '#40ffdf');
+    this._spline.setAttribute('stroke-width', '1.85');
+    this._spline.setAttribute('d', path);
+    this._svgDiv.appendChild(this._spline);
+
+    // the label
+    this._label = document.createElement('div');
+    this._label.setAttribute('class', 'widgets spline area');
+    this._label.setAttribute('draggable', true);
+    this._label.style.border = '2px solid';
+    this._label.style.backgroundColor = '#F9F9F9';
+    this._label.style.color = '#353535';
+    this._label.style.padding = '4px';
+    this._label.style.position = 'absolute';
+    this._label.style.transformOrigin = '0 100%';
+    this._label.innerHTML = 'Area: ';
+    this._container.appendChild(this._label);
+
+    this.updateDOMColor();
   }
 
   free() {
@@ -260,7 +294,25 @@ export default class WidgetSpline extends WidgetsBase {
         // this._spline.setAttribute('stroke', '#40ffdf');
         // this._spline.setAttribute('stroke-width', '1.85');
         this._spline.setAttribute('d', path);
+
+
+        // label position
+        this._label.innerHTML = 'Area: ';
+
+        // put the label on the top side of the line
+        const labelx = this._handles[1].screenPosition.x;
+        let labely = this._handles[1].screenPosition.y;
+
+        let labelPosy = (labely - this._container.offsetHeight) + 10;
+
+        let transform2 = `translate3D(${Math.round(labelx)}px,${Math.round(labelPosy)}px, 0)`;
+        this._label.style.transform = transform2;
     }
+  }
+
+  updateDOMColor() {
+    this._spline.style.backgroundColor = `${this._color}`;
+    this._label.style.borderColor = `${this._color}`;
   }
 
   splineInterpolation(coordList) {
