@@ -18,6 +18,7 @@ export default class WidgetPolygon extends WidgetsBase {
     this._svgDiv = svgDiv;
 
     this._active = true;
+    this._closedShape = false;
 
     this._worldPosition = new THREE.Vector3();
     if(this._targetMesh !== null) {
@@ -69,6 +70,11 @@ export default class WidgetPolygon extends WidgetsBase {
   addEventListeners() {
     this._container.addEventListener('mousewheel', this.onMove);
     this._container.addEventListener('DOMMouseScroll', this.onMove);
+  }
+
+  removeEventListeners() {
+    this._container.removeEventListener('mousewheel', this.onMove);
+    this._container.removeEventListener('DOMMouseScroll', this.onMove);
   }
 
   distanceBetweenFirstPoint(firstPosition, newPosition) {
@@ -190,6 +196,13 @@ export default class WidgetPolygon extends WidgetsBase {
     // threejs stuff
 
     // dom
+    if (this._polygon.parentNode == this._svgDiv) {
+      this._svgDiv.removeChild(this._polygon);
+    }
+
+    for(var i = 0; i < this._handles.length; i++) {
+        this._handles[i].free();
+    }
 
     // event
     this.removeEventListeners();
@@ -248,6 +261,14 @@ export default class WidgetPolygon extends WidgetsBase {
         // this._spline.setAttribute('stroke-width', '1.85');
         this._polygon.setAttribute('d', path);
     }
+  }
+
+  get closedShape() {
+    return this._closedShape;
+  }
+
+  set closedShape(closedShape) {
+    this._closedShape = closedShape;
   }
 
 }

@@ -309,8 +309,12 @@ export default class WidgetsHandle extends WidgetsBase {
 
   free() {
     // threejs stuff
+    this.remove(this._mesh);
 
     // dom
+    if (this._dom.parentNode == this._container) {
+      this._container.removeChild(this._dom);
+    }
 
     // event
     this.removeEventListeners();

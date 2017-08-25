@@ -75,9 +75,6 @@ export default class WidgetCircle extends WidgetsBase {
   }
 
   removeEventListeners() {
-    this._dom.removeEventListener('mouseenter', this.onHover);
-    this._dom.removeEventListener('mouseleave', this.onHover);
-
     this._container.removeEventListener('mousewheel', this.onMove);
     this._container.removeEventListener('DOMMouseScroll', this.onMove);
   }
@@ -211,7 +208,7 @@ export default class WidgetCircle extends WidgetsBase {
 
     // mesh
     this._mesh = new THREE.Line(this._geometry, this._material);
-    this._mesh.visible = true;
+    this._mesh.visible = false;
 
     // add it!
     this.add(this._mesh);
@@ -362,8 +359,20 @@ export default class WidgetCircle extends WidgetsBase {
 
   free() {
     // threejs stuff
+    this.remove(this._mesh);
+
 
     // dom
+    if (this._circle.parentNode == this._svgDiv) {
+      this._svgDiv.removeChild(this._circle);
+    }
+
+    if (this._distance.parentNode == this._container) {
+      this._container.removeChild(this._distance);
+    }
+
+    this._handles[0].free();
+    this._handles[1].free();
 
     // event
     this.removeEventListeners();

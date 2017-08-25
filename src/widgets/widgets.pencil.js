@@ -18,6 +18,7 @@ export default class WidgetsPencil extends WidgetsBase {
 		this._svgDiv = svgDiv;
 
 		this._active = true;
+        this._closedShape = false;
 
 		this._worldPosition = new THREE.Vector3();
     if(this._targetMesh !== null) {
@@ -262,5 +263,13 @@ export default class WidgetsPencil extends WidgetsBase {
         // this._spline.setAttribute('stroke-width', '1.85');
         this._pencil.setAttribute('d', path);
     }
+  }
+
+  get closedShape() {
+    return this._closedShape;
+  }
+
+  set closedShape(closedShape) {
+    this._closedShape = closedShape;
   }
 }

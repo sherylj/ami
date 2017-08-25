@@ -18,6 +18,7 @@ export default class WidgetSpline extends WidgetsBase {
     this._svgDiv = svgDiv;
 
     this._active = true;
+    this._closedShape = false;
 
     this._worldPosition = new THREE.Vector3();
     if(this._targetMesh !== null) {
@@ -74,6 +75,13 @@ export default class WidgetSpline extends WidgetsBase {
     this._container.addEventListener('DOMMouseScroll', this.onMove);
     this._label.addEventListener('mousedown', this.dragMouseDown, false);
     this._label.addEventListener('mouseup', this.dragMouseUp, false);
+  }
+
+  removeEventListeners() {
+    this._container.removeEventListener('mousewheel', this.onMove);
+    this._container.removeEventListener('DOMMouseScroll', this.onMove);
+    this._label.removeEventListener('mousedown', this.dragMouseDown);
+    this._label.removeEventListener('mouseup', this.dragMouseUp);
   }
 
   dragMouseUp() {
@@ -174,7 +182,6 @@ export default class WidgetSpline extends WidgetsBase {
     }
 
     console.log('the spline is active or inactive : ' + this._active);
-
     /* if(this._dragged || !this._handles[1].tracking) {
       this._handles[1].tracking = false;
       this._handles[1].onEnd(evt);
@@ -240,6 +247,17 @@ export default class WidgetSpline extends WidgetsBase {
     // threejs stuff
 
     // dom
+    if (this._spline.parentNode == this._svgDiv) {
+      this._svgDiv.removeChild(this._spline);
+    }
+
+    if (this._label.parentNode == this._container) {
+        this._container.removeChild(this._label);
+    }
+
+    for(var i = 0; i < this._handles.length; i++) {
+        this._handles[i].free();
+    }
 
     // event
     this.removeEventListeners();
@@ -552,6 +570,14 @@ export default class WidgetSpline extends WidgetsBase {
     }// endfor each interval
         // *newPt = calloc(totNewPt, sizeof(NSPoint));
     return res;
+    }
+
+    get closedShape() {
+      return this._closedShape;
+    }
+
+    set closedShape(closedShape) {
+      this._closedShape = closedShape;
     }
 
 }

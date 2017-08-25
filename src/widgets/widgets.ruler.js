@@ -65,6 +65,11 @@ export default class WidgetsRuler extends WidgetsBase {
     this._container.addEventListener('DOMMouseScroll', this.onMove);
   }
 
+  removeEventListeners() {
+    this._container.removeEventListener('mousewheel', this.onMove);
+    this._container.removeEventListener('DOMMouseScroll', this.onMove);
+  }
+
   onMove(evt) {
     this._dragged = true;
 
@@ -233,6 +238,27 @@ export default class WidgetsRuler extends WidgetsBase {
     this._handles[1].worldPosition = this._worldPosition;
 
     this.update();
+  }
+
+  free() {
+    // threejs stuff
+    this.remove(this._mesh);
+
+
+    // dom
+    if (this._line.parentNode == this._container) {
+      this._container.removeChild(this._line);
+    }
+
+    if (this._distance.parentNode == this._container) {
+      this._container.removeChild(this._distance);
+    }
+
+    this._handles[0].free();
+    this._handles[1].free();
+
+    // event
+    this.removeEventListeners();
   }
 
 }

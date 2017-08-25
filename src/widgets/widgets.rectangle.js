@@ -71,6 +71,11 @@ export default class WidgetRectangle extends WidgetsBase {
     this._container.addEventListener('DOMMouseScroll', this.onMove);
   }
 
+  removeEventListeners() {
+    this._container.removeEventListener('mousewheel', this.onMove);
+    this._container.removeEventListener('DOMMouseScroll', this.onMove);
+  }
+
   onMove(evt) {
     this._dragged = true;
 
@@ -137,6 +142,13 @@ export default class WidgetRectangle extends WidgetsBase {
     // threejs stuff
 
     // dom
+    if (this._rectangle.parentNode == this._svgDiv) {
+      this._svgDiv.removeChild(this._rectangle);
+    }
+
+    for(var i = 0; i < this._handles.length; i++) {
+        this._handles[i].free();
+    }
 
     // event
     this.removeEventListeners();

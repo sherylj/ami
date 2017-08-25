@@ -78,6 +78,11 @@ export default class WidgetBiline extends WidgetsBase {
     this._container.addEventListener('DOMMouseScroll', this.onMove);
   }
 
+  removeEventListeners() {
+    this._container.removeEventListener('mousewheel', this.onMove);
+    this._container.removeEventListener('DOMMouseScroll', this.onMove);
+  }
+
   onMove(evt) {
     this._dragged = true;
     this._handles[0].onMove(evt);
@@ -136,15 +141,6 @@ export default class WidgetBiline extends WidgetsBase {
     this._biline.setAttribute('stroke-width', '1.85');
     // this._biline.setAttribute('d', path);
     this._svgDiv.appendChild(this._biline);
-  }
-
-  free() {
-    // threejs stuff
-
-    // dom
-
-    // event
-    this.removeEventListeners();
   }
 
   createPerpendicular() {
@@ -261,5 +257,23 @@ export default class WidgetBiline extends WidgetsBase {
     if(this._geometry) {
       this._geometry.verticesNeedUpdate = true;
     }
+  }
+
+  free() {
+    // threejs stuff
+    this.remove(this._mesh);
+
+    // dom
+    if (this._biline.parentNode == this._svgDiv) {
+      this._svgDiv.removeChild(this._biline);
+    }
+
+    this._handles[0].free();
+    this._handles[1].free();
+    this._handles[2].free();
+    this._handles[3].free();
+
+    // event
+    this.removeEventListeners();
   }
 }
