@@ -169,16 +169,12 @@ export default class WidgetCircle extends WidgetsBase {
   }
 
   updateMeshPosition() {
-    if(this._mesh) {
+    if(this._geometry) {
       this._geometry.verticesNeedUpdate=true;
-      let w0 = this._handles[0].worldPosition;
-      let w1 = this._handles[1].worldPosition;
 
       // let length = Math.sqrt((w0.x-w1.x)*(w0.x-w1.x) + (w0.y-w1.y)*(w0.y-w1.y) + (w0.z-w1.z)*(w0.z-w1.z)).toFixed(2);
 
       // this._radius = length;
-      this.remove(this._mesh);
-      this.createMesh(); // create mesh with new radius
     }
   }
 
@@ -310,7 +306,8 @@ export default class WidgetCircle extends WidgetsBase {
       this._circle.setAttribute('stroke-width', 3);
       this._circle.setAttribute('fill', '#044B94');
       this._circle.setAttribute('fill-opacity', '0.0');
-    } else if (this._handles[1]._active) {
+    } else {
+      console.log('something else moved or resized');
       this._circle.setAttribute('cx', this._handles[0].screenPosition.x);
       this._circle.setAttribute('cy', this._handles[0].screenPosition.y);
       this._circle.setAttribute('r', length);
