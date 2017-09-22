@@ -1,15 +1,19 @@
 import WidgetsBase from '../../src/widgets/widgets.base';
 import WidgetsHandle from '../../src/widgets/widgets.handle';
 import CoreIntersections from '../../src/core/core.intersections';
+import ModelsStack from '../models/models.stack';
+import ModelsVoxel from '../models/models.voxel';
+import PixelMap from '../helpers/helpers.pixelmap';
 
 /**
 * @module widgets/circle
 */
 
 export default class WidgetSpline extends WidgetsBase {
-  constructor(targetMesh, controls, camera, container, svgDiv) {
+  constructor(stack, targetMesh, controls, camera, container, svgDiv) {
     super();
 
+    this._stack = stack;
     this._targetMesh = targetMesh;
     this._controls = controls;
     this._camera = camera;
@@ -21,9 +25,12 @@ export default class WidgetSpline extends WidgetsBase {
     this._closedShape = false;
 
     this._worldPosition = new THREE.Vector3();
-    if(this._targetMesh !== null) {
+    if (this._targetMesh !== null) {
       this._worldPosition = this._targetMesh.position;
     }
+
+    // pixel map
+    this._pixelMap = new PixelMap();
 
     // mesh stuff
     this._material = null;
@@ -181,6 +188,7 @@ export default class WidgetSpline extends WidgetsBase {
         this._active = this._active || this._handles[i].active;
     }
 
+    this.updateSplinePixels();
     console.log('the spline is active or inactive : ' + this._active);
     /* if(this._dragged || !this._handles[1].tracking) {
       this._handles[1].tracking = false;
@@ -212,6 +220,7 @@ export default class WidgetSpline extends WidgetsBase {
   create() {
     // this.createMesh();
     this.createDOM();
+    this.createVoxel();
   }
 
   createDOM() {
@@ -231,16 +240,21 @@ export default class WidgetSpline extends WidgetsBase {
     this._label = document.createElement('div');
     this._label.setAttribute('class', 'widgets spline area');
     this._label.setAttribute('draggable', true);
+    this._label.style.fontSize = '13px';
     this._label.style.border = '2px solid';
     this._label.style.backgroundColor = '#F9F9F9';
     this._label.style.color = '#353535';
     this._label.style.padding = '4px';
     this._label.style.position = 'absolute';
     this._label.style.transformOrigin = '0 100%';
-    this._label.innerHTML = 'Area: ';
     this._container.appendChild(this._label);
 
     this.updateDOMColor();
+  }
+
+  createVoxel() {
+    this._voxel = new ModelsVoxel();
+    this._voxel.id = this.id;
   }
 
   free() {
@@ -315,16 +329,15 @@ export default class WidgetSpline extends WidgetsBase {
 
 
         // label position
-        this._label.innerHTML = 'Area: ';
 
         // put the label on the top side of the line
-        const labelx = this._handles[1].screenPosition.x;
+        /* const labelx = this._handles[1].screenPosition.x;
         let labely = this._handles[1].screenPosition.y;
 
         let labelPosy = (labely - this._container.offsetHeight) + 10;
 
         let transform2 = `translate3D(${Math.round(labelx)}px,${Math.round(labelPosy)}px, 0)`;
-        this._label.style.transform = transform2;
+        this._label.style.transform = transform2;*/
     }
   }
 
@@ -572,12 +585,111 @@ export default class WidgetSpline extends WidgetsBase {
     return res;
     }
 
-    get closedShape() {
-      return this._closedShape;
+  get closedShape() {
+    return this._closedShape;
+  }
+
+  set closedShape(closedShape) {
+    this._closedShape = closedShape;
+  }
+
+  updateSplinePixels() {
+    const data = this.dataFromCanvas();
+    const bbox = this._spline.getBBox();
+    for (let x = bbox.x; x <= bbox.x + bbox.width + 1; x++) {
+      for (let y = bbox.y; y <= bbox.y + bbox.height + 10; y++) {
+        const r = parseInt(y);
+        const c = parseInt(x);
+        if (data.data[parseInt(4 * (c + r * data.width) + 0)] === 255) {
+          const screenCoordinate = new THREE.Vector3();
+          screenCoordinate.x = x;
+          screenCoordinate.y = y;
+          screenCoordinate.z = this._handles[0].screenPosition.z;
+          this._voxel.worldCoordinates = this.screenToWorld(screenCoordinate, this._camera, this._container);
+          // update data coordinates
+          this._voxel.dataCoordinates = ModelsStack.worldToData(
+                  this._stack,
+                  this._voxel.worldCoordinates);
+          // update value
+          this._voxel.dataCoordinates.z = 0;
+          let value = ModelsStack.value(
+                  this._stack,
+                  this._voxel.dataCoordinates);
+          this._voxel.value = ModelsStack.valueRescaleSlopeIntercept(
+                  value,
+                  this._stack.rescaleSlope,
+                  this._stack.rescaleIntercept);
+          if (this._pixelMap.getPixelValue(this._voxel.value)) {
+            this._pixelMap.addPixel(this._voxel.value, this._pixelMap.getPixelValue(this._voxel.value) + 1);
+          } else {
+            this._pixelMap.addPixel(this._voxel.value, 1);
+          }
+        }
+      }
+      this._pixelMap.calculateMinMax();
+      this._pixelMap.calculateTotalMean();
+      this._pixelMap.calculateStandardDeviation();
+
+      this.addtoLabel();
+    }
+  }
+
+  addtoLabel() {
+    let x1 = this._handles[0].screenPosition.x;
+    let y1 = this._handles[0].screenPosition.y;
+    let x2 = this._handles[1].screenPosition.x;
+    let y2 = this._handles[1].screenPosition.y;
+
+    let x0 = x2;
+    let y0 = y2;
+
+    if (y1 >= y2) {
+      y0 = y2 - 50;
+    } else {
+      y0 = y2 + 50;
     }
 
-    set closedShape(closedShape) {
-      this._closedShape = closedShape;
-    }
+    let posY0 =
+      y0 - this._container.offsetHeight - this._label.offsetHeight/2;
+      x0 -= this._label.offsetWidth/2;
 
+    let transform2 =
+      `translate3D(${Math.round(x0)}px,${Math.round(posY0)}px, 0)`;
+
+    this._label.style.transform = transform2;
+    this._label.innerHTML = `Mean: ${this._pixelMap._mean} <br />
+        Min: ${this._pixelMap._min} <br />
+        Max: ${this._pixelMap._max} <br />
+        Std Dev: ${this._pixelMap._stdDev}`;
+  }
+
+  screenToWorld(screenCoordinate, camera, canvas) {
+    let worldCoordinates = screenCoordinate.clone();
+    worldCoordinates.x = (screenCoordinate.x / canvas.offsetWidth) * 2 - 1;
+    worldCoordinates.y = (-screenCoordinate.y / canvas.offsetHeight) * 2 + 1;
+    worldCoordinates = worldCoordinates.unproject(camera);
+    return worldCoordinates;
+  }
+
+  dataFromCanvas() {
+    this._canvas = document.createElement('canvas');
+    this._canvas.setAttribute('id', 'circleCanvas');
+    this._canvas.setAttribute('width', this._container.offsetWidth);
+    this._canvas.setAttribute('height', this._container.offsetHeight);
+    let ctx = this._canvas.getContext('2d');
+
+    ctx.beginPath();
+    // consider spline as polygon
+    ctx.moveTo(this._handles[0].screenPosition.x, this._handles[0].screenPosition.y);
+    for (let i = 0; i < this._handles.length; i++) {
+      ctx.lineTo(this._handles[i].screenPosition.x, this._handles[i].screenPosition.y);
+    }
+    ctx.closePath();
+    ctx.strokeStyle = 'rgba(255 ,0, 0, 1.0)';
+    ctx.fillStyle = 'rgba(255 ,0, 0, 1.0)';
+    ctx.stroke();
+    ctx.fill();
+
+    return ctx.getImageData(0, 0, this._container.offsetWidth, this._container.offsetHeight);
+  }
 }

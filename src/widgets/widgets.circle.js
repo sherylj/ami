@@ -1,15 +1,20 @@
 import WidgetsBase from '../../src/widgets/widgets.base';
 import WidgetsHandle from '../../src/widgets/widgets.handle';
 import CoreIntersections from '../../src/core/core.intersections';
+import ModelsStack from '../models/models.stack';
+import ModelsVoxel from '../models/models.voxel';
+import PixelMap from '../helpers/helpers.pixelmap';
+
 
 /**
 * @module widgets/circle
 */
 
 export default class WidgetCircle extends WidgetsBase {
-  constructor(targetMesh, controls, camera, container, svgDiv) {
+  constructor(stack, targetMesh, controls, camera, container, svgDiv) {
     super();
 
+    this._stack = stack;
     this._targetMesh = targetMesh;
     this._controls = controls;
     this._camera = camera;
@@ -18,6 +23,7 @@ export default class WidgetCircle extends WidgetsBase {
     this._svgDiv = svgDiv;
 
     this._active = true;
+    this._lastEvent = null;
 
     this._worldPosition = new THREE.Vector3();
     if(this._targetMesh !== null) {
@@ -32,6 +38,9 @@ export default class WidgetCircle extends WidgetsBase {
     // dom stuff
     this._circle = null;
     this._distance = null;
+
+    // pixel map
+    this._pixelMap = new PixelMap();
 
     // dom stuff
     // this._circle = null;
@@ -72,16 +81,20 @@ export default class WidgetCircle extends WidgetsBase {
   addEventListeners() {
     this._container.addEventListener('mousewheel', this.onMove);
     this._container.addEventListener('DOMMouseScroll', this.onMove);
+
+    this._controls.addEventListener('end', this.onEndControl);
   }
 
   removeEventListeners() {
     this._container.removeEventListener('mousewheel', this.onMove);
     this._container.removeEventListener('DOMMouseScroll', this.onMove);
+    this._controls.removeEventListener('end', this.onEndControl);
   }
 
   create() {
     this.createMesh();
     this.createDOM();
+    this.createVoxel();
   }
 
   distanceBetween(point1, point2) {
@@ -93,6 +106,7 @@ export default class WidgetCircle extends WidgetsBase {
   }
 
   onStart(evt) {
+    this._lastEvent = evt;
     this._dragged = false;
 
     this._handles[0].onStart(evt);
@@ -103,25 +117,28 @@ export default class WidgetCircle extends WidgetsBase {
   }
 
   onEnd(evt) {
+    this._lastEvent = evt;
     // First Handle
     this._handles[0].onEnd(evt);
 
     window.console.log(this);
 
     // Second Handle
-    if(this._dragged || !this._handles[1].tracking) {
+    if (this._dragged || !this._handles[1].tracking) {
       this._handles[1].tracking = false;
       this._handles[1].onEnd(evt);
-    } else{
+    } else {
       this._handles[1].tracking = false;
     }
 
     // State of circle widget
     this._active = this._handles[0].active || this._handles[1].active;
+    this.updateCirclePixels();
     this.update();
   }
 
   onMove(evt) {
+    this._lastEvent = evt;
     this._dragged = true;
 
     this._handles[0].onMove(evt);
@@ -134,19 +151,23 @@ export default class WidgetCircle extends WidgetsBase {
     this.update();
   }
 
+  onEndControl() {
+    if (!this._lastEvent) {
+      return;
+    }
+
+    console.log('this is the last last end control');
+    window.requestAnimationFrame(() => {
+      this.onMove(this._lastEvent);
+    });
+  }
+
   drawCircle(x, y) {
     this._context.beginPath();
     this._context.arc(x, y, 60, false, Math.PI * 2, false);
     this._context.closePath();
     this._context.fill();
     this._context.stroke();
-  }
-
-  clearCanvas(x, y, radius) {
-    // this._context.clearRect(0, 0, this_context.canvas.width, this._context.canvas.height);
-    console.log('top left: ' + (x - radius));
-    console.log('top right: ' + (y + radius));
-    this._context.clearRect(x - radius, y - radius, radius * 2, radius * 2);
   }
 
   update() {
@@ -163,13 +184,13 @@ export default class WidgetCircle extends WidgetsBase {
   }//
 
   updateMeshColor() {
-    if(this._material) {
+    if (this._material) {
       this._material.color.set(this._color);
     }
   }
 
   updateMeshPosition() {
-    if(this._geometry) {
+    if (this._geometry) {
       this._geometry.verticesNeedUpdate=true;
 
       // let length = Math.sqrt((w0.x-w1.x)*(w0.x-w1.x) + (w0.y-w1.y)*(w0.y-w1.y) + (w0.z-w1.z)*(w0.z-w1.z)).toFixed(2);
@@ -188,6 +209,11 @@ export default class WidgetCircle extends WidgetsBase {
     screenCoordinates.z = 0;
 
     return screenCoordinates;
+  }
+
+  createVoxel() {
+    this._voxel = new ModelsVoxel();
+    this._voxel.id = this.id;
   }
 
   createMesh() {
@@ -240,7 +266,7 @@ export default class WidgetCircle extends WidgetsBase {
     this._circle.setAttribute('cx', this._handles[0].screenPosition.x);
     this._circle.setAttribute('cy', this._handles[0].screenPosition.y);
     this._circle.setAttribute('r', this._radius);
-    this._circle.setAttribute('stroke', 'blue');
+    this._circle.setAttribute('stroke', '#40ffdf');
     this._circle.setAttribute('stroke-width', 3);
     this._circle.setAttribute('fill', '#044B94');
     this._circle.setAttribute('fill-opacity', '0.0');
@@ -254,6 +280,7 @@ export default class WidgetCircle extends WidgetsBase {
     // add distance!
     this._distance = document.createElement('div');
     this._distance.setAttribute('class', 'widgets circle radius');
+    this._distance.style.fontSize = '13px';
     this._distance.style.border = '2px solid';
     this._distance.style.backgroundColor = '#F9F9F9';
 
@@ -302,16 +329,15 @@ export default class WidgetCircle extends WidgetsBase {
       this._circle.setAttribute('cx', this._handles[0].screenPosition.x);
       this._circle.setAttribute('cy', this._handles[0].screenPosition.y);
       this._circle.setAttribute('r', this._radius);
-      this._circle.setAttribute('stroke', 'blue');
+      this._circle.setAttribute('stroke', '#40ffdf');
       this._circle.setAttribute('stroke-width', 3);
       this._circle.setAttribute('fill', '#044B94');
       this._circle.setAttribute('fill-opacity', '0.0');
     } else {
-      console.log('something else moved or resized');
       this._circle.setAttribute('cx', this._handles[0].screenPosition.x);
       this._circle.setAttribute('cy', this._handles[0].screenPosition.y);
       this._circle.setAttribute('r', length);
-      this._circle.setAttribute('stroke', 'blue');
+      this._circle.setAttribute('stroke', '#40ffdf');
       this._circle.setAttribute('stroke-width', 3);
       this._circle.setAttribute('fill', '#044B94');
       this._circle.setAttribute('fill-opacity', '0.0');
@@ -327,7 +353,6 @@ export default class WidgetCircle extends WidgetsBase {
     // this._context.arc(this._handles[0].screenPosition.x, this._handles[0].screenPosition.y, length, 0, Math.PI * 2, true);
     // this._context.stroke();
 
-    
     // this.drawCircle(this._handles[0].screenPosition.x, this._handles[0].screenPosition.y);
     // this._line.style.height = length;
 
@@ -335,7 +360,24 @@ export default class WidgetCircle extends WidgetsBase {
     let w0 = this._handles[0].worldPosition;
     let w1 = this._handles[1].worldPosition;
 
-    this._distance.innerHTML = `Radius : ${Math.sqrt((w0.x-w1.x)*(w0.x-w1.x) + (w0.y-w1.y)*(w0.y-w1.y) + (w0.z-w1.z)*(w0.z-w1.z)).toFixed(2)} mm`;
+    if (this._pixelMap._stdDev) {
+      this._distance.innerHTML =
+      `Radius: ${
+        Math.sqrt((w0.x-w1.x)*(w0.x-w1.x)
+          + (w0.y-w1.y)*(w0.y-w1.y)
+          + (w0.z-w1.z)*(w0.z-w1.z)).toFixed(2)} mm <br />
+        Mean: ${this._pixelMap._mean} <br />
+        Min: ${this._pixelMap._min} <br />
+        Max: ${this._pixelMap._max} <br />
+        Std Dev: ${this._pixelMap._stdDev}`;
+    } else {
+      this._distance.innerHTML =
+      `Radius : ${
+        Math.sqrt((w0.x-w1.x)*(w0.x-w1.x)
+          + (w0.y-w1.y)*(w0.y-w1.y)
+          + (w0.z-w1.z)*(w0.z-w1.z)).toFixed(2)} mm`;
+    }
+
     let posY0 = y0 - this._container.offsetHeight - this._distance.offsetHeight/2;
     x0 -= this._distance.offsetWidth/2;
 
@@ -385,5 +427,72 @@ export default class WidgetCircle extends WidgetsBase {
 
   get worldPosition() {
     return this._worldPosition;
+  }
+
+  updateCirclePixels() {
+    const data = this.dataFromCircleCanvas();
+
+    const bbox = this._circle.getBBox();
+    for (let x = bbox.x; x <= bbox.x + bbox.width + 1; x++) {
+      for (let y = bbox.y; y <= bbox.y + bbox.height + 1; y++) {
+        const r = parseInt(y);
+        const c = parseInt(x);
+        if (data.data[parseInt(4 * (c + r * data.width) + 0)] === 255) {
+          const screenCoordinate = new THREE.Vector3();
+          screenCoordinate.x = x;
+          screenCoordinate.y = y;
+          screenCoordinate.z = this._handles[0].screenPosition.z;
+          this._voxel.worldCoordinates = this.screenToWorld(screenCoordinate, this._camera, this._container);
+          // update data coordinates
+          this._voxel.dataCoordinates = ModelsStack.worldToData(
+                  this._stack,
+                  this._voxel.worldCoordinates);
+          // update value
+          this._voxel.dataCoordinates.z = 0;
+          let value = ModelsStack.value(
+                  this._stack,
+                  this._voxel.dataCoordinates);
+          this._voxel.value = ModelsStack.valueRescaleSlopeIntercept(
+                  value,
+                  this._stack.rescaleSlope,
+                  this._stack.rescaleIntercept);
+          if (this._pixelMap.getPixelValue(this._voxel.value)) {
+            this._pixelMap.addPixel(this._voxel.value, this._pixelMap.getPixelValue(this._voxel.value) + 1);
+          } else {
+            this._pixelMap.addPixel(this._voxel.value, 1);
+          }
+        }
+      }
+      this._pixelMap.calculateMinMax();
+      this._pixelMap.calculateTotalMean();
+      this._pixelMap.calculateStandardDeviation();
+    }
+  }
+
+  screenToWorld(screenCoordinate, camera, canvas) {
+    let worldCoordinates = screenCoordinate.clone();
+    worldCoordinates.x = (screenCoordinate.x / canvas.offsetWidth) * 2 - 1;
+    worldCoordinates.y = (-screenCoordinate.y / canvas.offsetHeight) * 2 + 1;
+    worldCoordinates = worldCoordinates.unproject(camera);
+    return worldCoordinates;
+  }
+
+  dataFromCircleCanvas() {
+    const START_ANGLE_RADANS = 0.0;
+    const END_ANGLE_RADANS = 6.28318531;
+    this._canvas = document.createElement('canvas');
+    this._canvas.setAttribute('id', 'circleCanvas');
+    this._canvas.setAttribute('width', this._container.offsetWidth);
+    this._canvas.setAttribute('height', this._container.offsetHeight);
+    let ctx = this._canvas.getContext('2d');
+
+    ctx.beginPath();
+    ctx.arc(this._handles[0].screenPosition.x, this._handles[0].screenPosition.y, this._radius, START_ANGLE_RADANS, END_ANGLE_RADANS);
+    ctx.strokeStyle = 'rgba(255 ,0, 0, 1.0)';
+    ctx.fillStyle = 'rgba(255 ,0, 0, 1.0)';
+    ctx.stroke();
+    ctx.fill();
+
+    return ctx.getImageData(0, 0, this._container.offsetWidth, this._container.offsetHeight);
   }
 }

@@ -61,11 +61,10 @@ export default class WidgetBiline extends WidgetsBase {
     let fourthHandle = new WidgetsHandle(this._targetMesh, this._controls, this._camera, this._container);
     fourthHandle.worldPosition = this._worldPosition;
 
-    this._handles.push(secondHandle);
     this._handles.push(thirdHandle);
     this._handles.push(fourthHandle);
 
-    // create spline
+    // create biline
     this.create();
 
     // event listeners

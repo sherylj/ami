@@ -250,7 +250,7 @@ export default class WidgetsPencil extends WidgetsBase {
     if (this._handles.length >= 2) {
         let path = 'M' + this._handles[0].screenPosition.x + ',' + this._handles[0].screenPosition.y;
         // const line = this.splineInterpolation(this._handles);
-        for(let i = 0; i < this._handles.length - 1; i++) {
+        for (let i = 0; i < this._handles.length - 1; i++) {
         	path = path + ' L' + this._handles[i].screenPosition.x + ',' +
         	this._handles[i].screenPosition.y;
         }
